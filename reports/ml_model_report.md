@@ -158,7 +158,6 @@ Final Model Performance
 The trained XGBoost model identified the following features as the most influential:
 
 - Shipping Mode
-- Order Status
 - Transaction Type
 - Order Region
 - Customer State
