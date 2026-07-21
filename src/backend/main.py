@@ -57,3 +57,55 @@ def predict_delay(shipment_id: int):
         "predicted_delay_days": predicted_delay_days,
         "model_version": model_version
     }
+
+
+@app.post("/prescribe/{prediction_id}")
+def prescribe_options(prediction_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT dp.*, s.order_item_quantity, s.product_price, s.benefit_per_order
+        FROM disruption_predictions dp
+        JOIN shipments s ON dp.shipment_id = s.id
+        WHERE dp.id = ?
+    """, (prediction_id,))
+    row = cursor.fetchone()
+
+    if row is None:
+        conn.close()
+        return {"error": "Prediction not found"}
+
+    quantity = row["order_item_quantity"] or 1
+    price = row["product_price"] or 0
+    benefit = row["benefit_per_order"] or 0
+    delay_days = row["predicted_delay_days"] or 1
+
+    BUDGET = 20000
+    MAX_TIME = 21
+
+    options = {
+        "A": {"action": "air_freight", "cost": round(price * quantity * 0.15, 2), "time_days": 2},
+        "B": {"action": "secondary_supplier", "cost": round(price * quantity * 1.10, 2), "time_days": 5},
+        "C": {"action": "delay_launch", "cost": round(abs(benefit) * delay_days * 0.02, 2), "time_days": delay_days},
+    }
+
+    saved_options = []
+    for label, opt in options.items():
+        if opt["cost"] <= BUDGET and opt["time_days"] <= MAX_TIME:
+            cursor.execute("""
+                INSERT INTO prescriptions (prediction_id, option_label, action_type, predicted_cost, predicted_time_days)
+                VALUES (?, ?, ?, ?, ?)
+            """, (prediction_id, label, opt["action"], opt["cost"], opt["time_days"]))
+            saved_options.append({
+                "prescription_id": cursor.lastrowid,
+                "option_label": label,
+                "action_type": opt["action"],
+                "predicted_cost": opt["cost"],
+                "predicted_time_days": opt["time_days"]
+            })
+
+    conn.commit()
+    conn.close()
+
+    return {"prediction_id": prediction_id, "options": saved_options}
