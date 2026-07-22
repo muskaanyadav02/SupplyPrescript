@@ -109,3 +109,46 @@ def prescribe_options(prediction_id: int):
     conn.close()
 
     return {"prediction_id": prediction_id, "options": saved_options}
+
+
+@app.post("/decisions/{prescription_id}/execute")
+def execute_decision(prescription_id: int, user_id: str = "manager_01"):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Confirm the prescription exists
+    cursor.execute("SELECT * FROM prescriptions WHERE id = ?", (prescription_id,))
+    prescription = cursor.fetchone()
+    if prescription is None:
+        conn.close()
+        return {"error": "Prescription not found"}
+
+    # Idempotency check — if already executed, return the existing decision instead of creating a duplicate
+    cursor.execute("SELECT * FROM decisions WHERE prescription_id = ?", (prescription_id,))
+    existing = cursor.fetchone()
+    if existing:
+        conn.close()
+        return {
+            "message": "Decision already executed (idempotent — no duplicate created)",
+            "decision_id": existing["id"],
+            "prescription_id": prescription_id,
+            "status": existing["status"]
+        }
+
+    # Insert the new decision
+    cursor.execute("""
+        INSERT INTO decisions (prescription_id, user_id, status)
+        VALUES (?, ?, 'executed')
+    """, (prescription_id, user_id))
+    conn.commit()
+
+    decision_id = cursor.lastrowid
+    conn.close()
+
+    return {
+        "message": "Decision executed successfully",
+        "decision_id": decision_id,
+        "prescription_id": prescription_id,
+        "action_type": prescription["action_type"],
+        "user_id": user_id
+    }
