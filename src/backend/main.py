@@ -152,3 +152,48 @@ def execute_decision(prescription_id: int, user_id: str = "manager_01"):
         "action_type": prescription["action_type"],
         "user_id": user_id
     }
+
+@app.get("/analytics/decision-roi")
+def decision_roi():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT o.*, p.action_type, p.predicted_cost, p.predicted_time_days
+        FROM outcomes o
+        JOIN decisions d ON o.decision_id = d.id
+        JOIN prescriptions p ON d.prescription_id = p.id
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    if not rows:
+        return {"message": "No outcomes recorded yet", "total_decisions": 0}
+
+    total = len(rows)
+    within_10_percent = 0
+    total_variance_cost = 0
+    by_action_type = {}
+
+    for row in rows:
+        variance_pct = abs(row["variance_cost"]) / row["predicted_cost"] if row["predicted_cost"] else 0
+        if variance_pct <= 0.10:
+            within_10_percent += 1
+        total_variance_cost += row["variance_cost"]
+
+        action = row["action_type"]
+        if action not in by_action_type:
+            by_action_type[action] = {"count": 0, "total_variance_cost": 0}
+        by_action_type[action]["count"] += 1
+        by_action_type[action]["total_variance_cost"] += row["variance_cost"]
+
+    for action in by_action_type:
+        count = by_action_type[action]["count"]
+        by_action_type[action]["avg_variance_cost"] = round(by_action_type[action]["total_variance_cost"] / count, 2)
+
+    return {
+        "total_decisions": total,
+        "percent_within_10_percent_of_prediction": round((within_10_percent / total) * 100, 1),
+        "average_variance_cost": round(total_variance_cost / total, 2),
+        "breakdown_by_action_type": by_action_type
+    }
