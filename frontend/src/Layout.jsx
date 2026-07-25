@@ -1,6 +1,9 @@
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import KpiCard from "./Components/KpiCard";
+import ShipmentTable from "./Components/shipmentTable";
+import SearchBar from "./Components/SearchBar";
+import LineChartComponent from "./charts/LineChartComponent";
 import { dashboardStats } from "./dashboardData";
 
 function Layout() {
@@ -24,6 +27,11 @@ function Layout() {
             Monitor shipment performance and supply chain insights.
           </p>
 
+          {/* Search Bar */}
+          <div style={{ marginTop: "20px" }}>
+            <SearchBar />
+          </div>
+
           {/* KPI Cards */}
           <div className="kpi-grid">
             {dashboardStats.map((item) => (
@@ -34,6 +42,16 @@ function Layout() {
                 icon={item.icon}
               />
             ))}
+          </div>
+
+          {/* Shipment Table */}
+          <div style={{ marginTop: "30px" }}>
+            <ShipmentTable />
+          </div>
+
+          {/* Line Chart */}
+          <div style={{ marginTop: "30px" }}>
+            <LineChartComponent />
           </div>
         </main>
       </div>

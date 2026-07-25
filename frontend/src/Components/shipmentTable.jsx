@@ -4,25 +4,31 @@ function ShipmentTable() {
   return (
     <div
       style={{
-        background: "#fff",
+        background: "#ffffff",
         padding: "20px",
-        marginTop: "20px",
         borderRadius: "12px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        marginTop: "30px",
       }}
     >
-      <h2>Shipment History</h2>
+      <h2 style={{ marginBottom: "20px" }}>
+        Shipment History
+      </h2>
 
       <table
         style={{
           width: "100%",
           borderCollapse: "collapse",
-          marginTop: "15px",
         }}
       >
         <thead>
-          <tr>
-            <th>Shipment ID</th>
+          <tr
+            style={{
+              background: "#2563eb",
+              color: "white",
+            }}
+          >
+            <th style={{ padding: "12px" }}>Shipment ID</th>
             <th>Supplier</th>
             <th>Product</th>
             <th>Delay</th>
@@ -33,12 +39,35 @@ function ShipmentTable() {
 
         <tbody>
           {shipmentData.map((shipment) => (
-            <tr key={shipment.id}>
-              <td>{shipment.id}</td>
+            <tr
+              key={shipment.id}
+              style={{
+                textAlign: "center",
+                borderBottom: "1px solid #ddd",
+              }}
+            >
+              <td style={{ padding: "12px" }}>{shipment.id}</td>
               <td>{shipment.supplier}</td>
               <td>{shipment.product}</td>
               <td>{shipment.delay} Days</td>
-              <td>{shipment.status}</td>
+
+              <td>
+                <span
+                  style={{
+                    background:
+                      shipment.status === "On Time"
+                        ? "#22c55e"
+                        : "#ef4444",
+                    color: "white",
+                    padding: "5px 12px",
+                    borderRadius: "20px",
+                    fontSize: "13px",
+                  }}
+                >
+                  {shipment.status}
+                </span>
+              </td>
+
               <td>${shipment.cost}</td>
             </tr>
           ))}
