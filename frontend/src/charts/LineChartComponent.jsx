@@ -26,11 +26,8 @@ function LineChartComponent() {
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={delayTrend}>
           <CartesianGrid strokeDasharray="3 3" />
-
           <XAxis dataKey="month" />
-
           <YAxis />
-
           <Tooltip />
 
           <Line
@@ -48,14 +45,3 @@ function LineChartComponent() {
 export default LineChartComponent;
 
 
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "20px",
-    marginTop: "20px",
-  }}
->
-  <BarChartComponent />
-  <PieChartComponent />
-</div>

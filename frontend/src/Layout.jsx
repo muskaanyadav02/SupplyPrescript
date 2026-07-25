@@ -1,6 +1,3 @@
-import BarChartComponent from "./charts/BarChartComponent";
-import PieChartComponent from "./charts/PieChartComponent";
-import LineChartComponent from "./charts/LineChartComponent";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import KpiCard from "./Components/KpiCard";
@@ -14,9 +11,11 @@ function Layout() {
 
       {/* Main Content */}
       <div className="flex-1 bg-gray-100 min-h-screen">
+        {/* Navbar */}
         <Navbar />
 
         <main className="p-6">
+          {/* Dashboard Heading */}
           <h1 className="text-3xl font-bold">
             SupplyPrescript Dashboard 📦
           </h1>
