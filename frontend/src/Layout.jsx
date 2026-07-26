@@ -4,6 +4,8 @@ import KpiCard from "./Components/KpiCard";
 import ShipmentTable from "./Components/shipmentTable";
 import SearchBar from "./Components/SearchBar";
 import LineChartComponent from "./charts/LineChartComponent";
+import BarChartComponent from "./charts/BarChartComponent";
+import PieChartComponent from "./charts/PieChartComponent";
 import { dashboardStats } from "./dashboardData";
 
 function Layout() {
@@ -52,6 +54,16 @@ function Layout() {
           {/* Line Chart */}
           <div style={{ marginTop: "30px" }}>
             <LineChartComponent />
+          </div>
+
+          {/* Bar Chart */}
+          <div style={{ marginTop: "30px" }}>
+            <BarChartComponent />
+          </div>
+
+          {/* Pie Chart */}
+          <div style={{ marginTop: "30px" }}>
+            <PieChartComponent />
           </div>
         </main>
       </div>
