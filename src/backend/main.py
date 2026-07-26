@@ -1,6 +1,13 @@
 from fastapi import FastAPI
 import sqlite3
 import random
+import pickle
+import pandas as pd
+
+with open("models/xgboost_model.pkl", "rb") as f:
+    xgb_model = pickle.load(f)
+with open("models/feature_columns.pkl", "rb") as f:
+    feature_columns = pickle.load(f)
 
 app = FastAPI()
 
@@ -29,35 +36,69 @@ def get_shipments():
 def predict_delay(shipment_id: int):
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Get the shipment and its linked order_id
     cursor.execute("SELECT * FROM shipments WHERE id = ?", (shipment_id,))
     shipment = cursor.fetchone()
-
     if shipment is None:
         conn.close()
         return {"error": "Shipment not found"}
 
-    # MOCK prediction — replace with real XGBoost model later
-    probability = round(random.uniform(0.3, 0.95), 2)
-    predicted_delay_days = round(random.uniform(2, 14), 1)
-    model_version = "mock_v0"
+    order_id = shipment["order_id"]
+
+    # Pull the full raw row from supply_chain (has all columns the model was trained on)
+    cursor.execute("SELECT * FROM supply_chain WHERE order_id = ? LIMIT 1", (order_id,))
+    raw_row = cursor.fetchone()
+    if raw_row is None:
+        conn.close()
+        return {"error": "Original order data not found for this shipment"}
+
+    raw_dict = dict(raw_row)
+
+    # Drop target + ID/PII columns, matching training exactly
+    columns_to_drop = [
+        "late_delivery_risk", "customer_fname", "customer_lname",
+        "customer_street", "product_image", "order_id", "customer_id",
+        "order_customer_id", "order_item_id", "product_card_id"
+    ]
+    for col in columns_to_drop:
+        raw_dict.pop(col, None)
+
+    # One-hot encode exactly like training did
+    df_row = pd.DataFrame([raw_dict])
+    df_encoded = pd.get_dummies(
+        df_row,
+        columns=df_row.select_dtypes(include=["object", "string"]).columns,
+        drop_first=True
+    )
+
+    # Align to the model's expected 443 columns, filling any missing ones with 0
+    df_aligned = df_encoded.reindex(columns=feature_columns, fill_value=0)
+
+    # Real XGBoost prediction
+    probability = float(xgb_model.predict_proba(df_aligned)[0][1])
+
+    # NOTE: model only predicts late_delivery_risk (probability).
+    # Delay duration is a placeholder estimate until confirmed with the ML team.
+    predicted_delay_days = round(7 + (probability * 7), 1)  # scales 7-14 days with risk
+
+    model_version = "xgboost_v1"
 
     cursor.execute("""
         INSERT INTO disruption_predictions (shipment_id, probability, predicted_delay_days, model_version)
         VALUES (?, ?, ?, ?)
     """, (shipment_id, probability, predicted_delay_days, model_version))
     conn.commit()
-
     prediction_id = cursor.lastrowid
     conn.close()
 
     return {
         "prediction_id": prediction_id,
         "shipment_id": shipment_id,
-        "probability": probability,
+        "probability": round(probability, 3),
         "predicted_delay_days": predicted_delay_days,
         "model_version": model_version
     }
-
 
 @app.post("/prescribe/{prediction_id}")
 def prescribe_options(prediction_id: int):
@@ -197,3 +238,4 @@ def decision_roi():
         "average_variance_cost": round(total_variance_cost / total, 2),
         "breakdown_by_action_type": by_action_type
     }
+
