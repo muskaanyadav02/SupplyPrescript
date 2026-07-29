@@ -7,11 +7,34 @@ import {
   Legend,
 } from "recharts";
 
-import { recommendationData } from "../data/chartData";
+const COLORS = [
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+];
 
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b"];
+function PieChartComponent({ data }) {
+  const statusCount = {};
 
-function PieChartComponent() {
+  data.forEach((item) => {
+    const status = item.delivery_status;
+
+    if (statusCount[status]) {
+      statusCount[status]++;
+    } else {
+      statusCount[status] = 1;
+    }
+  });
+
+  const chartData = Object.entries(statusCount).map(
+    ([status, count]) => ({
+      name: status,
+      value: count,
+    })
+  );
+
   return (
     <div
       style={{
@@ -19,21 +42,25 @@ function PieChartComponent() {
         padding: "20px",
         borderRadius: "12px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+        marginTop: "20px",
       }}
     >
-      <h2>Recommendation Distribution</h2>
+      <h2>Delivery Status Distribution</h2>
 
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={350}>
         <PieChart>
           <Pie
-            data={recommendationData}
+            data={chartData}
             dataKey="value"
             nameKey="name"
-            outerRadius={100}
+            outerRadius={120}
             label
           >
-            {recommendationData.map((entry, index) => (
-              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+            {chartData.map((entry, index) => (
+              <Cell
+                key={index}
+                fill={COLORS[index % COLORS.length]}
+              />
             ))}
           </Pie>
 
