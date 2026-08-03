@@ -3,6 +3,7 @@ import sqlite3
 import random
 import pickle
 import pandas as pd
+from pulp import LpProblem, LpVariable, LpMinimize, lpSum, LpStatus, value
 
 with open("models/xgboost_model.pkl", "rb") as f:
     xgb_model = pickle.load(f)
@@ -125,31 +126,66 @@ def prescribe_options(prediction_id: int):
     BUDGET = 20000
     MAX_TIME = 21
 
+    # Candidate options — cost/time inputs to the optimizer
     options = {
         "A": {"action": "air_freight", "cost": round(price * quantity * 0.15, 2), "time_days": 2},
         "B": {"action": "secondary_supplier", "cost": round(price * quantity * 1.10, 2), "time_days": 5},
         "C": {"action": "delay_launch", "cost": round(abs(benefit) * delay_days * 0.02, 2), "time_days": delay_days},
     }
 
+    # --- Real PuLP optimization ---
+    # Binary decision variable per option: 1 if selected, 0 if not
+    prob = LpProblem("Prescriptive_Decision", LpMinimize)
+    x = {label: LpVariable(f"select_{label}", cat="Binary") for label in options}
+
+    # Objective: minimize cost of the selected option
+    prob += lpSum(options[label]["cost"] * x[label] for label in options)
+
+    # Constraint: exactly one option must be selected
+    prob += lpSum(x[label] for label in options) == 1
+
+    # Constraint: the selected option must respect budget and time limits
+    for label in options:
+        prob += options[label]["cost"] * x[label] <= BUDGET
+        prob += options[label]["time_days"] * x[label] <= MAX_TIME * x[label] + MAX_TIME * (1 - x[label]) if False else options[label]["time_days"] * x[label] <= MAX_TIME
+
+    prob.solve()
+    solver_status = LpStatus[prob.status]
+
     saved_options = []
+    optimal_label = None
+
     for label, opt in options.items():
-        if opt["cost"] <= BUDGET and opt["time_days"] <= MAX_TIME:
-            cursor.execute("""
-                INSERT INTO prescriptions (prediction_id, option_label, action_type, predicted_cost, predicted_time_days)
-                VALUES (?, ?, ?, ?, ?)
-            """, (prediction_id, label, opt["action"], opt["cost"], opt["time_days"]))
-            saved_options.append({
-                "prescription_id": cursor.lastrowid,
-                "option_label": label,
-                "action_type": opt["action"],
-                "predicted_cost": opt["cost"],
-                "predicted_time_days": opt["time_days"]
-            })
+        # Only surface options that individually satisfy hard constraints
+        feasible = opt["cost"] <= BUDGET and opt["time_days"] <= MAX_TIME
+        if not feasible:
+            continue
+
+        cursor.execute("""
+            INSERT INTO prescriptions (prediction_id, option_label, action_type, predicted_cost, predicted_time_days)
+            VALUES (?, ?, ?, ?, ?)
+        """, (prediction_id, label, opt["action"], opt["cost"], opt["time_days"]))
+
+        saved_options.append({
+            "prescription_id": cursor.lastrowid,
+            "option_label": label,
+            "action_type": opt["action"],
+            "predicted_cost": opt["cost"],
+            "predicted_time_days": opt["time_days"]
+        })
+
+        if x[label].value() == 1:
+            optimal_label = label
 
     conn.commit()
     conn.close()
 
-    return {"prediction_id": prediction_id, "options": saved_options}
+    return {
+        "prediction_id": prediction_id,
+        "solver_status": solver_status,
+        "optimal_option": optimal_label,
+        "options": saved_options
+    }
 
 
 @app.post("/decisions/{prescription_id}/execute")
