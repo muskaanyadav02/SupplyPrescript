@@ -1,0 +1,101 @@
+order_id,customer_city,customer_state,category_name,product_name,order_item_total,benefit_per_order,days_for_shipping_real,late_delivery_risk,delivery_status,order_status,shipping_mode
+70746,Caguas,PR,Computers,Dell Laptop,1275.0,599.25,2,0,Advance shipping,PENDING_PAYMENT,Standard Class
+74536,Caguas,PR,Computers,Dell Laptop,1275.0,408.0,2,0,Shipping on time,COMPLETE,Second Class
+70522,Caguas,PR,Computers,Dell Laptop,1470.0,529.2,3,0,Advance shipping,CLOSED,Standard Class
+70606,Moreno Valley,CA,Computers,Dell Laptop,1365.0,614.25,2,1,Late delivery,PENDING_PAYMENT,First Class
+70736,Caguas,PR,Computers,Dell Laptop,1440.0,504.0,2,0,Shipping on time,PENDING,Second Class
+70842,Caguas,PR,Computers,Dell Laptop,1417.5,531.56,3,0,Advance shipping,PENDING,Standard Class
+70811,Caguas,PR,Computers,Dell Laptop,1485.0,579.15,2,0,Advance shipping,PROCESSING,Standard Class
+70692,Caguas,PR,Computers,Dell Laptop,1275.0,548.25,3,0,Advance shipping,PROCESSING,Standard Class
+70631,Caguas,PR,Computers,Dell Laptop,1485.0,519.75,2,0,Advance shipping,COMPLETE,Standard Class
+70756,Caguas,PR,Computers,Dell Laptop,1470.0,543.9,2,0,Advance shipping,COMPLETE,Standard Class
+70677,Caguas,PR,Computers,Dell Laptop,1350.0,456.3,3,0,Advance shipping,COMPLETE,Standard Class
+70766,Caguas,PR,Computers,Dell Laptop,1320.0,501.6,2,0,Advance shipping,COMPLETE,Standard Class
+70817,Caguas,PR,Computers,Dell Laptop,1260.0,592.2,3,0,Advance shipping,COMPLETE,Standard Class
+70637,Caguas,PR,Computers,Dell Laptop,1260.0,491.4,3,0,Advance shipping,COMPLETE,Standard Class
+68786,Caguas,PR,Basketball,SOLE E25 Elliptical,929.99,446.4,2,0,Advance shipping,COMPLETE,Standard Class
+70774,Painesville,OH,Computers,Dell Laptop,1470.0,477.75,0,0,Shipping on time,CLOSED,Same Day
+70608,Brooklyn,NY,Computers,Dell Laptop,1417.5,479.12,4,0,Shipping on time,CLOSED,Standard Class
+70722,Silver Spring,MD,Computers,Dell Laptop,1500.0,525.0,3,0,Advance shipping,CLOSED,Standard Class
+74483,Caguas,PR,Computers,Dell Laptop,1305.0,613.35,4,0,Shipping on time,COMPLETE,Standard Class
+74541,Hacienda Heights,CA,Computers,Dell Laptop,1395.0,488.25,2,0,Advance shipping,CLOSED,Standard Class
+70588,Orlando,FL,Computers,Dell Laptop,1365.0,655.2,2,1,Late delivery,COMPLETE,First Class
+70796,Daly City,CA,Computers,Dell Laptop,1200.0,588.0,2,0,Shipping on time,PENDING_PAYMENT,Second Class
+74516,Sunnyvale,CA,Computers,Dell Laptop,1245.0,597.6,2,0,Shipping on time,PENDING_PAYMENT,Second Class
+70767,Pacoima,CA,Computers,Dell Laptop,1350.0,456.3,3,0,Advance shipping,PENDING_PAYMENT,Standard Class
+70818,Alpharetta,GA,Computers,Dell Laptop,1275.0,599.25,4,0,Shipping on time,PENDING_PAYMENT,Standard Class
+70538,Caguas,PR,Computers,Dell Laptop,1440.0,662.4,4,0,Shipping on time,COMPLETE,Standard Class
+70536,Caguas,PR,Computers,Dell Laptop,1417.5,708.75,2,0,Advance shipping,COMPLETE,Standard Class
+70546,Caguas,PR,Computers,Dell Laptop,1245.0,448.2,2,0,Advance shipping,COMPLETE,Standard Class
+74499,Dallas,TX,Computers,Dell Laptop,1260.0,604.8,2,1,Late delivery,COMPLETE,First Class
+70558,Sugar Land,TX,Computers,Dell Laptop,1470.0,720.3,1,1,Late delivery,COMPLETE,Same Day
+74488,Wichita,KS,Computers,Dell Laptop,1417.5,680.4,0,0,Shipping on time,COMPLETE,Same Day
+70823,Albuquerque,NM,Computers,Dell Laptop,1395.0,506.39,4,0,Shipping on time,PENDING_PAYMENT,Standard Class
+70532,New Brunswick,NJ,Computers,Dell Laptop,1320.0,646.8,3,0,Advance shipping,PENDING_PAYMENT,Standard Class
+70511,Phoenix,AZ,Computers,Dell Laptop,1260.0,604.8,2,0,Advance shipping,PENDING_PAYMENT,Standard Class
+70833,New Bedford,MA,Computers,Dell Laptop,1230.0,602.7,4,0,Shipping on time,PENDING_PAYMENT,Standard Class
+70583,Los Angeles,CA,Computers,Dell Laptop,1260.0,491.4,0,0,Shipping on time,COMPLETE,Same Day
+74557,Lancaster,OH,Computers,Dell Laptop,1350.0,490.05,0,0,Shipping on time,COMPLETE,Same Day
+68821,Amarillo,TX,Strength Training,SOLE E35 Elliptical,1799.99,864.0,2,0,Shipping on time,COMPLETE,Second Class
+70697,Newark,DE,Computers,Dell Laptop,1395.0,471.51,3,0,Advance shipping,COMPLETE,Standard Class
+70668,Caguas,PR,Computers,Dell Laptop,1500.0,720.0,2,1,Late delivery,PENDING_PAYMENT,First Class
+70713,Caguas,PR,Computers,Dell Laptop,1350.0,661.5,2,1,Late delivery,PENDING_PAYMENT,First Class
+70696,Katy,TX,Computers,Dell Laptop,1365.0,477.75,2,0,Advance shipping,ON_HOLD,Standard Class
+68722,San Diego,CA,Strength Training,SOLE E35 Elliptical,1599.99,520.0,3,0,Advance shipping,ON_HOLD,Standard Class
+70611,La Mesa,CA,Computers,Dell Laptop,1455.0,436.5,2,0,Shipping on time,COMPLETE,Second Class
+70717,Caguas,PR,Computers,Dell Laptop,1425.0,612.75,2,1,Late delivery,PENDING_PAYMENT,First Class
+70710,Buffalo,NY,Computers,Dell Laptop,1275.0,637.5,0,0,Shipping on time,PROCESSING,Same Day
+70847,Bakersfield,CA,Computers,Dell Laptop,1485.0,464.81,3,0,Advance shipping,COMPLETE,Standard Class
+70757,Los Angeles,CA,Computers,Dell Laptop,1485.0,683.1,3,0,Advance shipping,COMPLETE,Standard Class
+70768,Columbia,SC,Computers,Dell Laptop,1365.0,641.55,4,0,Shipping on time,COMPLETE,Standard Class
+70552,New York,NY,Computers,Dell Laptop,1365.0,477.75,3,0,Advance shipping,COMPLETE,Standard Class
+70531,Cerritos,CA,Computers,Dell Laptop,1305.0,417.6,2,0,Advance shipping,COMPLETE,Standard Class
+70836,Potomac,MD,Computers,Dell Laptop,1275.0,624.75,2,0,Advance shipping,COMPLETE,Standard Class
+70728,York,PA,Computers,Dell Laptop,1275.0,497.25,4,0,Shipping on time,COMPLETE,Standard Class
+70763,Miami,FL,Computers,Dell Laptop,1260.0,541.8,4,0,Shipping on time,COMPLETE,Standard Class
+70832,Washington,DC,Computers,Dell Laptop,1200.0,540.0,3,0,Advance shipping,COMPLETE,Standard Class
+68858,Palatine,IL,Strength Training,SOLE E35 Elliptical,1889.99,686.07,4,0,Shipping on time,COMPLETE,Standard Class
+68837,Bronx,NY,Strength Training,SOLE E35 Elliptical,1819.99,473.2,3,0,Advance shipping,COMPLETE,Standard Class
+68724,Augusta,GA,Strength Training,SOLE E35 Elliptical,1639.99,721.6,5,1,Late delivery,COMPLETE,Standard Class
+70632,Cincinnati,OH,Computers,Dell Laptop,1500.0,525.0,3,0,Advance shipping,ON_HOLD,Standard Class
+70731,Dallas,TX,Computers,Dell Laptop,1350.0,675.0,2,0,Shipping canceled,CANCELED,Standard Class
+70846,Los Angeles,CA,Computers,Dell Laptop,1470.0,496.86,2,0,Advance shipping,PENDING,Standard Class
+70828,Rego Park,NY,Computers,Dell Laptop,1470.0,529.2,4,0,Shipping on time,PENDING,Standard Class
+70693,Antioch,CA,Computers,Dell Laptop,1305.0,639.45,4,0,Shipping on time,PROCESSING,Standard Class
+74496,Morristown,NJ,Computers,Dell Laptop,1200.0,435.6,2,0,Advance shipping,PENDING,Standard Class
+74518,Chicago,IL,Computers,Dell Laptop,1275.0,497.25,4,0,Shipping on time,PROCESSING,Standard Class
+74555,Las Vegas,NV,Computers,Dell Laptop,1305.0,574.2,6,0,Shipping canceled,SUSPECTED_FRAUD,Standard Class
+74506,Winnetka,CA,Computers,Dell Laptop,1417.5,524.48,2,0,Advance shipping,PENDING_PAYMENT,Standard Class
+70803,Caguas,PR,Computers,Dell Laptop,1350.0,621.0,4,0,Shipping on time,PENDING_PAYMENT,Standard Class
+70514,Caguas,PR,Computers,Dell Laptop,1320.0,594.0,2,1,Late delivery,PROCESSING,First Class
+70702,Albuquerque,NM,Computers,Dell Laptop,1470.0,705.6,0,0,Shipping on time,COMPLETE,Same Day
+70542,Weslaco,TX,Computers,Dell Laptop,1500.0,705.0,3,1,Late delivery,COMPLETE,Second Class
+70747,Chicago,IL,Computers,Dell Laptop,1305.0,639.45,3,0,Advance shipping,COMPLETE,Standard Class
+70618,Carlisle,PA,Computers,Dell Laptop,1245.0,510.45,4,0,Shipping on time,COMPLETE,Standard Class
+68822,El Centro,CA,Basketball,SOLE E25 Elliptical,949.99,465.5,3,0,Advance shipping,COMPLETE,Standard Class
+70581,Detroit,MI,Computers,Dell Laptop,1230.0,446.49,0,0,Shipping on time,PENDING,Same Day
+70541,Los Angeles,CA,Computers,Dell Laptop,1485.0,534.6,2,0,Shipping on time,PENDING,Second Class
+70686,West Haven,CT,Computers,Dell Laptop,1500.0,720.0,2,0,Advance shipping,PENDING,Standard Class
+70557,Bellflower,CA,Computers,Dell Laptop,1455.0,698.4,3,0,Advance shipping,PENDING,Standard Class
+70687,Howell,MI,Computers,Dell Laptop,1125.0,483.75,3,0,Advance shipping,PENDING,Standard Class
+70641,Bronx,NY,Computers,Dell Laptop,1350.0,490.05,2,0,Advance shipping,PROCESSING,Standard Class
+70761,San Diego,CA,Computers,Dell Laptop,1230.0,399.75,2,0,Advance shipping,PROCESSING,Standard Class
+70666,Caguas,PR,Computers,Dell Laptop,1470.0,588.0,2,0,Advance shipping,PROCESSING,Standard Class
+70612,Caguas,PR,Computers,Dell Laptop,1470.0,690.9,3,1,Late delivery,PENDING_PAYMENT,Second Class
+70787,Caguas,PR,Computers,Dell Laptop,1395.0,697.5,3,1,Late delivery,PENDING_PAYMENT,Second Class
+70806,Caguas,PR,Computers,Dell Laptop,1417.5,460.69,2,0,Advance shipping,PENDING_PAYMENT,Standard Class
+74511,Peoria,AZ,Computers,Dell Laptop,1485.0,464.81,2,0,Shipping canceled,CANCELED,Standard Class
+74526,Bakersfield,CA,Computers,Dell Laptop,1440.0,417.6,2,0,Advance shipping,PENDING,Standard Class
+74571,San Jose,CA,Computers,Dell Laptop,1260.0,441.0,2,0,Advance shipping,PENDING,Standard Class
+70593,Caguas,PR,Computers,Dell Laptop,1455.0,545.63,4,0,Shipping on time,COMPLETE,Standard Class
+70701,Caguas,PR,Computers,Dell Laptop,1455.0,712.95,2,0,Advance shipping,COMPLETE,Standard Class
+70587,Caguas,PR,Computers,Dell Laptop,1350.0,661.5,2,1,Late delivery,PROCESSING,First Class
+70638,Bayamon,PR,Computers,Dell Laptop,1275.0,535.5,2,0,Shipping canceled,SUSPECTED_FRAUD,First Class
+70567,Caguas,PR,Computers,Dell Laptop,1305.0,456.75,3,0,Shipping canceled,SUSPECTED_FRAUD,Standard Class
+74492,Rio Grande,PR,Computers,Dell Laptop,1470.0,661.5,3,0,Advance shipping,PENDING,Standard Class
+74522,Caguas,PR,Computers,Dell Laptop,1365.0,641.55,3,0,Advance shipping,PROCESSING,Standard Class
+74503,Augusta,GA,Computers,Dell Laptop,1350.0,580.5,4,0,Shipping on time,PAYMENT_REVIEW,Standard Class
+70642,Astoria,NY,Computers,Dell Laptop,1365.0,341.25,0,0,Shipping on time,PENDING,Same Day
+70793,Caguas,PR,Computers,Dell Laptop,1485.0,697.95,4,0,Shipping on time,CLOSED,Standard Class
+70837,Caguas,PR,Computers,Dell Laptop,1305.0,626.4,3,0,Advance shipping,CLOSED,Standard Class
+68883,Caguas,PR,Strength Training,SOLE E35 Elliptical,1939.99,911.8,2,1,Late delivery,COMPLETE,First Class
