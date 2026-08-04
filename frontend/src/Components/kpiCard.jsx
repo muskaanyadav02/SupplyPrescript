@@ -6,12 +6,11 @@ function KpiCard({ title, value, icon }) {
       <div className="kpi-icon">{icon}</div>
 
       <div className="kpi-content">
-        <h3>{title}</h3>
-        <h2>{value}</h2>
+        <h3 className="kpi-title">{title}</h3>
+        <h2 className="kpi-value">{value}</h2>
       </div>
     </div>
   );
 }
 
 export default KpiCard;
-
