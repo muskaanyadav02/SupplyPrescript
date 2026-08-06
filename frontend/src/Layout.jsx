@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { loadSupplyChainData } from "./data/loadSupplyChainData";
+import api from "./api/api";
 
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
@@ -13,31 +14,60 @@ import BarChartComponent from "./charts/BarChartComponent";
 import PieChartComponent from "./charts/PieChartComponent";
 
 function Layout() {
-  // React State
+  // CSV Data (used for charts & current KPIs)
   const [data, setData] = useState([]);
 
+  // Backend Shipment Data
+  const [shipmentData, setShipmentData] = useState([]);
+
+  // Loading state
+  const [loading, setLoading] = useState(true);
+
+  // -----------------------------
   // Load CSV
+  // -----------------------------
   useEffect(() => {
     async function getData() {
-      const csvData = await loadSupplyChainData();
+      try {
+        const csvData = await loadSupplyChainData();
+        setData(csvData);
 
-      setData(csvData);
-
-      console.log("========== CSV LOADED ==========");
-      console.log("First Row:");
-      console.log(csvData[0]);
-
-      console.log("Column Names:");
-      console.log(Object.keys(csvData[0]));
-
-      console.log("Total Rows:", csvData.length);
-      console.log("===============================");
+        console.log("CSV Loaded:", csvData.length);
+      } catch (err) {
+        console.error("CSV Error:", err);
+      }
     }
 
     getData();
   }, []);
 
-  // KPI Calculations
+  // -----------------------------
+  // Load Shipments from Backend
+  // -----------------------------
+  useEffect(() => {
+    async function getShipments() {
+      try {
+        console.log("Fetching shipments...");
+
+        const response = await api.get("/shipments");
+
+        console.log("Backend Shipments:");
+        console.log(response.data);
+
+        setShipmentData(response.data);
+      } catch (error) {
+        console.error("Error fetching shipments:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    getShipments();
+  }, []);
+
+  // -----------------------------
+  // KPI Calculations (CSV for now)
+  // -----------------------------
   const totalOrders = data.length;
 
   const lateDeliveries = data.filter(
@@ -62,16 +92,12 @@ function Layout() {
 
   return (
     <div className="flex">
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
       <div className="flex-1 bg-gray-100 min-h-screen">
-        {/* Navbar */}
         <Navbar />
 
         <main className="p-6">
-          {/* Heading */}
           <h1 className="text-3xl font-bold">
             SupplyPrescript Dashboard 📦
           </h1>
@@ -80,7 +106,6 @@ function Layout() {
             Monitor shipment performance and supply chain insights.
           </p>
 
-          {/* Search */}
           <div style={{ marginTop: "20px" }}>
             <SearchBar />
           </div>
@@ -114,20 +139,22 @@ function Layout() {
 
           {/* Shipment Table */}
           <div style={{ marginTop: "30px" }}>
-            <ShipmentTable shipmentData={data.slice(0, 20)} />
+            {loading ? (
+              <h3>Loading Shipments...</h3>
+            ) : (
+              <ShipmentTable shipmentData={shipmentData} />
+            )}
           </div>
 
-          {/* Line Chart */}
+          {/* Charts */}
           <div style={{ marginTop: "30px" }}>
             <LineChartComponent data={data} />
           </div>
 
-          {/* Bar Chart */}
           <div style={{ marginTop: "30px" }}>
             <BarChartComponent data={data} />
           </div>
 
-          {/* Pie Chart */}
           <div style={{ marginTop: "30px" }}>
             <PieChartComponent data={data} />
           </div>

@@ -1,25 +1,44 @@
+import { useState } from "react";
+import api from "../api/api";
+
 function ShipmentTable({ shipmentData = [] }) {
-  console.log("Shipment Data:");
-  console.log(shipmentData);
+  const [prediction, setPrediction] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
+
+  async function handlePredict(shipmentId) {
+    try {
+      setLoadingId(shipmentId);
+
+      const response = await api.get(`/predict/${shipmentId}`);
+
+      console.log(response.data);
+
+      setPrediction(response.data);
+    } catch (error) {
+      console.error(error);
+      alert("Prediction Failed");
+    } finally {
+      setLoadingId(null);
+    }
+  }
 
   return (
     <div
       style={{
-        background: "#ffffff",
+        background: "#fff",
         padding: "20px",
         borderRadius: "12px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
         marginTop: "30px",
       }}
     >
-      <h2 style={{ marginBottom: "20px" }}>
-        Shipment History
-      </h2>
+      <h2>Shipment History (Live Backend)</h2>
 
       <table
         style={{
           width: "100%",
           borderCollapse: "collapse",
+          marginTop: "20px",
         }}
       >
         <thead>
@@ -29,74 +48,93 @@ function ShipmentTable({ shipmentData = [] }) {
               color: "white",
             }}
           >
-            <th style={{ padding: "12px" }}>Order ID</th>
-            <th>Product</th>
-            <th>Customer</th>
-            <th>Delivery Status</th>
-            <th>Shipping Mode</th>
-            <th>Sales ($)</th>
+            <th>Order ID</th>
+            <th>Category</th>
+            <th>Region</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Predict</th>
           </tr>
         </thead>
 
         <tbody>
-          {shipmentData.length > 0 ? (
-            shipmentData.map((shipment, index) => (
-              <tr
-                key={index}
-                style={{
-                  textAlign: "center",
-                  borderBottom: "1px solid #ddd",
-                }}
-              >
-                <td style={{ padding: "12px" }}>
-                  {shipment.order_id || "N/A"}
-                </td>
+          {shipmentData.map((shipment) => (
+            <tr
+              key={shipment.id}
+              style={{
+                textAlign: "center",
+                borderBottom: "1px solid #ddd",
+              }}
+            >
+              <td>{shipment.order_id}</td>
 
-                <td>{shipment.product_name || "N/A"}</td>
+              <td>{shipment.category_name}</td>
 
-                <td>
-                  {(shipment.customer_fname || "") +
-                    " " +
-                    (shipment.customer_lname || "")}
-                </td>
+              <td>{shipment.order_region}</td>
 
-                <td>
-                  <span
-                    style={{
-                      background:
-                        shipment.delivery_status === "Late delivery"
-                          ? "#ef4444"
-                          : "#22c55e",
-                      color: "white",
-                      padding: "5px 12px",
-                      borderRadius: "20px",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {shipment.delivery_status || "N/A"}
-                  </span>
-                </td>
+              <td>{shipment.order_item_quantity}</td>
 
-                <td>{shipment.shipping_mode || "N/A"}</td>
+              <td>${shipment.product_price}</td>
 
-                <td>${shipment.sales || 0}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan="6"
-                style={{
-                  textAlign: "center",
-                  padding: "20px",
-                }}
-              >
-                Loading shipment data...
+              <td>{shipment.status}</td>
+
+              <td>
+                <button
+                  onClick={() => handlePredict(shipment.id)}
+                  disabled={loadingId === shipment.id}
+                  style={{
+                    background: "#2563eb",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 14px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {loadingId === shipment.id
+                    ? "Predicting..."
+                    : "Predict"}
+                </button>
               </td>
             </tr>
-          )}
+          ))}
         </tbody>
       </table>
+
+      {prediction && (
+        <div
+          style={{
+            marginTop: "25px",
+            padding: "20px",
+            borderRadius: "10px",
+            background: "#eef6ff",
+            border: "1px solid #2563eb",
+          }}
+        >
+          <h3>Prediction Result</h3>
+
+          <p>
+            <strong>Shipment ID:</strong>{" "}
+            {prediction.shipment_id}
+          </p>
+
+          <p>
+            <strong>Probability:</strong>{" "}
+            {(prediction.probability * 100).toFixed(2)}%
+          </p>
+
+          <p>
+            <strong>Predicted Delay:</strong>{" "}
+            {prediction.predicted_delay_days} Days
+          </p>
+
+          <p>
+            <strong>Model:</strong>{" "}
+            {prediction.model_version}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
