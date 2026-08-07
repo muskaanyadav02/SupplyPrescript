@@ -1,17 +1,24 @@
 from fastapi import FastAPI
 import sqlite3
 import pickle
-import pandas as pdfrom pulp import LpProblem, LpVariable, LpMinimize, lpSum, LpStatus
+import pandas as pd
 
+from pulp import (
+    LpProblem,
+    LpVariable,
+    LpMinimize,
+    lpSum,
+    LpStatus,
+    value
+)
 # -----------------------------
 # Load ML Model
 # -----------------------------
-with open("models/xgboost_model.pkl", "rb") as f:
+with open("../../models/xgboost_model.pkl", "rb") as f:
     xgb_model = pickle.load(f)
 
-with open("models/feature_columns.pkl", "rb") as f:
+with open("../../models/feature_columns.pkl", "rb") as f:
     feature_columns = pickle.load(f)
-
 app = FastAPI()
 
 
