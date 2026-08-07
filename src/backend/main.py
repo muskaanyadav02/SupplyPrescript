@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import sqlite3
 import pickle
-import pandas as pd
+import pandas as pdfrom pulp import LpProblem, LpVariable, LpMinimize, lpSum, LpStatus
 
 # -----------------------------
 # Load ML Model
@@ -215,6 +215,7 @@ def predict_delay(shipment_id: int):
         "model_version": "xgboost_v1"
     }
 # -----------------------------
+# -----------------------------
 # Prescription API
 # -----------------------------
 @app.post("/prescribe/{prediction_id}")
@@ -242,32 +243,59 @@ def prescribe_options(prediction_id: int):
     quantity = row["order_item_quantity"] or 1
     price = row["product_price"] or 0
     benefit = row["benefit_per_order"] or 0
-    delay = row["predicted_delay_days"] or 1
+    delay_days = row["predicted_delay_days"] or 1
 
-    options = [
-        {
-            "label": "A",
+    BUDGET = 20000
+    MAX_TIME = 21
+
+    options = {
+        "A": {
             "action": "Air Freight",
             "cost": round(price * quantity * 0.15, 2),
-            "days": 2
+            "time_days": 2
         },
-        {
-            "label": "B",
+        "B": {
             "action": "Secondary Supplier",
             "cost": round(price * quantity * 1.10, 2),
-            "days": 5
+            "time_days": 5
         },
-        {
-            "label": "C",
+        "C": {
             "action": "Delay Launch",
-            "cost": round(abs(benefit) * delay * 0.02, 2),
-            "days": delay
+            "cost": round(abs(benefit) * delay_days * 0.02, 2),
+            "time_days": delay_days
         }
-    ]
+    }
 
-    saved = []
+    # -----------------------------
+    # PuLP Optimization
+    # -----------------------------
+    prob = LpProblem("Prescriptive_Decision", LpMinimize)
 
-    for option in options:
+    x = {
+        label: LpVariable(f"select_{label}", cat="Binary")
+        for label in options
+    }
+
+    # Minimize total cost
+    prob += lpSum(options[label]["cost"] * x[label] for label in options)
+
+    # Select exactly one option
+    prob += lpSum(x[label] for label in options) == 1
+
+    # Budget constraint
+    prob += lpSum(options[label]["cost"] * x[label] for label in options) <= BUDGET
+
+    # Time constraint
+    prob += lpSum(options[label]["time_days"] * x[label] for label in options) <= MAX_TIME
+
+    prob.solve()
+
+    solver_status = LpStatus[prob.status]
+
+    saved_options = []
+    optimal_option = None
+
+    for label, option in options.items():
 
         cursor.execute("""
             INSERT INTO prescriptions
@@ -282,26 +310,33 @@ def prescribe_options(prediction_id: int):
         """,
         (
             prediction_id,
-            option["label"],
+            label,
             option["action"],
             option["cost"],
-            option["days"]
+            option["time_days"]
         ))
 
-        saved.append({
-            "prescription_id": cursor.lastrowid,
-            "option_label": option["label"],
+        prescription_id = cursor.lastrowid
+
+        saved_options.append({
+            "prescription_id": prescription_id,
+            "option_label": label,
             "action_type": option["action"],
             "predicted_cost": option["cost"],
-            "predicted_time_days": option["days"]
+            "predicted_time_days": option["time_days"]
         })
+
+        if x[label].value() == 1:
+            optimal_option = label
 
     conn.commit()
     conn.close()
 
     return {
         "prediction_id": prediction_id,
-        "options": saved
+        "solver_status": solver_status,
+        "optimal_option": optimal_option,
+        "options": saved_options
     }
 
 
