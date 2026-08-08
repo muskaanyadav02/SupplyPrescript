@@ -1,59 +1,45 @@
-import {
-  FaBoxes,
-  FaExclamationTriangle,
-  FaDollarSign,
-  FaTruck,
-} from "react-icons/fa";
+import { TrendingUp } from "lucide-react";
+import "./KpiCard.css";
 
-function KpiCard({ title, value, icon }) {
-  let bgColor = "from-blue-500 to-blue-700";
-  let Icon = FaBoxes;
-
-  if (title === "Late Deliveries") {
-    bgColor = "from-red-500 to-red-700";
-    Icon = FaExclamationTriangle;
-  }
-
-  if (title === "Total Sales") {
-    bgColor = "from-green-500 to-green-700";
-    Icon = FaDollarSign;
-  }
-
-  if (title === "Avg Shipping Days") {
-    bgColor = "from-orange-500 to-orange-700";
-    Icon = FaTruck;
-  }
-
+function KpiCard({
+  title,
+  value,
+  icon: Icon,
+  color = "kpi-blue",
+}) {
   return (
-    <div
-      className={`bg-gradient-to-r ${bgColor}
-      rounded-2xl
-      shadow-lg
-      hover:shadow-2xl
-      hover:scale-105
-      transition-all
-      duration-300
-      text-white
-      p-6`}
-    >
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-sm opacity-90">{title}</p>
+    <div className={`kpi-card ${color}`}>
 
-          <h2 className="text-3xl font-bold mt-2">
-            {value}
-          </h2>
+      <div className="kpi-content">
 
-          <p className="text-xs mt-3 opacity-80">
+        <p className="kpi-title">
+          {title}
+        </p>
+
+        <h2 className="kpi-value">
+          {value}
+        </h2>
+
+        <div className="kpi-live">
+
+          <TrendingUp size={15} />
+
+          <span>
             Updated Live
-          </p>
+          </span>
+
         </div>
 
-        <Icon
-          size={42}
-          className="opacity-80"
-        />
       </div>
+
+      <div className="kpi-icon">
+
+        {Icon && (
+          <Icon size={28} />
+        )}
+
+      </div>
+
     </div>
   );
 }
