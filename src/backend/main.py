@@ -3,166 +3,23 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import sqlite3
 import pickle
-import pandas as pd
+import pandas as pdfrom pulp import LpProblem, LpVariable, LpMinimize, lpSum, LpStatus
 
-from pathlib import Path
+# -----------------------------
+# Load ML Model
+# -----------------------------
+with open("models/xgboost_model.pkl", "rb") as f:
+    xgb_model = pickle.load(f)
 
-from pulp import (
-    LpProblem,
-    LpVariable,
-    LpMinimize,
-    lpSum,
-    LpStatus
-)
+with open("models/feature_columns.pkl", "rb") as f:
+    feature_columns = pickle.load(f)
 
-
-# ============================================================
-# PROJECT PATHS
-# ============================================================
-
-# Current file:
-#
-# SupplyPrescript/
-# └── src/
-#     └── backend/
-#         └── main.py
-#
-# parents[0] = backend
-# parents[1] = src
-# parents[2] = SupplyPrescript
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-
-MODEL_PATH = PROJECT_ROOT / "models" / "xgboost_model.pkl"
-
-FEATURE_COLUMNS_PATH = (
-    PROJECT_ROOT / "models" / "feature_columns.pkl"
-)
-
-DATABASE_PATH = (
-    PROJECT_ROOT / "database" / "supply_chain.db"
-)
+app = FastAPI()
 
 
-# ============================================================
-# CHECK PROJECT FILES
-# ============================================================
-
-print("=" * 60)
-print("SupplyPrescript Backend")
-print("=" * 60)
-
-print("Project Root:")
-print(PROJECT_ROOT)
-
-print("Database:")
-print(DATABASE_PATH)
-
-print("XGBoost Model:")
-print(MODEL_PATH)
-
-print("Feature Columns:")
-print(FEATURE_COLUMNS_PATH)
-
-print("=" * 60)
-
-
-# ============================================================
-# FASTAPI APPLICATION
-# ============================================================
-
-app = FastAPI(
-    title="SupplyPrescript API",
-    description=(
-        "AI-powered Supply Chain Prediction "
-        "and Prescriptive Analytics API"
-    ),
-    version="1.0.0"
-)
-
-
-# ============================================================
-# CORS
-# ============================================================
-
-# Allows the React/Vite frontend to communicate
-# with the FastAPI backend.
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-# ============================================================
-# LOAD MACHINE LEARNING MODEL
-# ============================================================
-
-xgb_model = None
-feature_columns = None
-
-
-try:
-
-    if MODEL_PATH.exists():
-
-        with open(MODEL_PATH, "rb") as f:
-            xgb_model = pickle.load(f)
-
-        print("SUCCESS: XGBoost model loaded.")
-
-    else:
-
-        print(
-            "WARNING: XGBoost model not found:"
-        )
-
-        print(MODEL_PATH)
-
-
-    if FEATURE_COLUMNS_PATH.exists():
-
-        with open(
-            FEATURE_COLUMNS_PATH,
-            "rb"
-        ) as f:
-
-            feature_columns = pickle.load(f)
-
-        print(
-            "SUCCESS: Feature columns loaded."
-        )
-
-    else:
-
-        print(
-            "WARNING: Feature columns file not found:"
-        )
-
-        print(FEATURE_COLUMNS_PATH)
-
-
-except Exception as error:
-
-    print(
-        "WARNING: ML model could not be loaded."
-    )
-
-    print(error)
-
-
-# ============================================================
-# DATABASE CONNECTION
-# ============================================================
-
+# -----------------------------
+# Database Connection
+# -----------------------------
 def get_db_connection():
 
     if not DATABASE_PATH.exists():
