@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 import random
 import pickle
@@ -11,6 +12,17 @@ with open("models/feature_columns.pkl", "rb") as f:
     feature_columns = pickle.load(f)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db_connection():
     conn = sqlite3.connect("database/supply_chain.db")
