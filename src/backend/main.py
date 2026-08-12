@@ -1,14 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
-import random
+from pathlib import Path
 import pickle
 import pandas as pd
-from pulp import LpProblem, LpVariable, LpMinimize, lpSum, LpStatus, value
+from pulp import LpProblem, LpVariable, LpMinimize, lpSum, LpStatus
 
-with open("models/xgboost_model.pkl", "rb") as f:
+BASE_DIR = Path(__file__).resolve().parents[2]
+
+DB_PATH = BASE_DIR / "database" / "supply_chain.db"
+MODEL_PATH = BASE_DIR / "models" / "xgboost_model.pkl"
+FEATURE_COLUMNS_PATH = BASE_DIR / "models" / "feature_columns.pkl"
+
+with open(MODEL_PATH, "rb") as f:
     xgb_model = pickle.load(f)
-with open("models/feature_columns.pkl", "rb") as f:
+
+with open(FEATURE_COLUMNS_PATH, "rb") as f:
     feature_columns = pickle.load(f)
 
 app = FastAPI()
@@ -25,9 +32,10 @@ app.add_middleware(
 )
 
 def get_db_connection():
-    conn = sqlite3.connect("database/supply_chain.db")
-    conn.row_factory = sqlite3.Row  # lets us return rows as dictionaries
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     return conn
+    
 
 @app.get("/")
 def root():
@@ -42,9 +50,24 @@ def get_shipments():
     conn.close()
     return [dict(row) for row in rows]
 
+@app.get("/predictions")
+def get_predictions():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT *
+        FROM disruption_predictions
+        ORDER BY id DESC
+        LIMIT 20
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [dict(row) for row in rows]
 
     
-
 @app.get("/predict/{shipment_id}")
 def predict_delay(shipment_id: int):
     conn = get_db_connection()
