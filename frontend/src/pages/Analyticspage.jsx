@@ -1,12 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
-  TrendingUp,
   Package,
-  Clock3,
   AlertTriangle,
+  Clock3,
   CheckCircle2,
+  IndianRupee,
+  RefreshCw,
 } from "lucide-react";
+
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 import { loadSupplyChainData } from "../data/loadSupplyChainData";
 
@@ -14,22 +29,22 @@ function AnalyticsPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const result = await loadSupplyChainData();
+
+      setData(Array.isArray(result) ? result : []);
+    } catch (error) {
+      console.error("Analytics data error:", error);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-
-        const result = await loadSupplyChainData();
-
-        setData(Array.isArray(result) ? result : []);
-      } catch (error) {
-        console.error("Analytics data error:", error);
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
   }, []);
 
@@ -41,38 +56,150 @@ function AnalyticsPage() {
         String(item?.late_delivery_risk ?? "") === "1"
     ).length;
 
-    const shippingDays = data.reduce((sum, item) => {
-      const days = Number(
-        item?.days_for_shipping_real ?? 0
-      );
-
-      return sum + (Number.isFinite(days) ? days : 0);
-    }, 0);
-
-    const averageDays =
-      total > 0
-        ? (shippingDays / total).toFixed(1)
-        : "0.0";
-
     const onTime = Math.max(total - late, 0);
 
     const onTimeRate =
       total > 0
-        ? ((onTime / total) * 100).toFixed(1)
-        : "0.0";
+        ? (onTime / total) * 100
+        : 0;
 
-    const totalSales = data.reduce((sum, item) => {
-      const sales = Number(item?.sales ?? 0);
+    const lateRate =
+      total > 0
+        ? (late / total) * 100
+        : 0;
 
-      return sum + (Number.isFinite(sales) ? sales : 0);
-    }, 0);
+    const shippingTotal = data.reduce(
+      (sum, item) =>
+        sum +
+        Number(item?.days_for_shipping_real ?? 0),
+      0
+    );
+
+    const averageShipping =
+      total > 0
+        ? shippingTotal / total
+        : 0;
+
+    const revenue = data.reduce(
+      (sum, item) =>
+        sum + Number(item?.sales ?? 0),
+      0
+    );
+
+    /*
+      Shipping mode analysis
+    */
+
+    const shippingModes = {};
+
+    data.forEach((item) => {
+      const mode =
+        item?.shipping_mode ||
+        item?.ShippingMode ||
+        item?.shippingMode ||
+        "Unknown";
+
+      const days = Number(
+        item?.days_for_shipping_real ?? 0
+      );
+
+      if (!shippingModes[mode]) {
+        shippingModes[mode] = {
+          totalDays: 0,
+          count: 0,
+        };
+      }
+
+      shippingModes[mode].totalDays +=
+        Number.isFinite(days) ? days : 0;
+
+      shippingModes[mode].count += 1;
+    });
+
+    const shippingPerformance = Object.entries(
+      shippingModes
+    )
+      .map(([mode, values]) => ({
+        mode,
+        averageDays:
+          values.count > 0
+            ? Number(
+                (
+                  values.totalDays /
+                  values.count
+                ).toFixed(1)
+              )
+            : 0,
+      }))
+      .sort(
+        (a, b) =>
+          b.averageDays - a.averageDays
+      )
+      .slice(0, 6);
+
+    /*
+      Risk distribution
+    */
+
+    const riskData = [
+      {
+        name: "High Risk",
+        value: late,
+      },
+      {
+        name: "Low Risk",
+        value: onTime,
+      },
+    ];
+
+    /*
+      Revenue by shipping mode
+    */
+
+    const revenueModes = {};
+
+    data.forEach((item) => {
+      const mode =
+        item?.shipping_mode ||
+        item?.ShippingMode ||
+        item?.shippingMode ||
+        "Unknown";
+
+      const sales = Number(
+        item?.sales ?? 0
+      );
+
+      revenueModes[mode] =
+        (revenueModes[mode] || 0) +
+        (Number.isFinite(sales) ? sales : 0);
+    });
+
+    const revenueData = Object.entries(
+      revenueModes
+    )
+      .map(([mode, revenue]) => ({
+        mode,
+        revenue: Number(
+          revenue.toFixed(0)
+        ),
+      }))
+      .sort(
+        (a, b) =>
+          b.revenue - a.revenue
+      )
+      .slice(0, 6);
 
     return {
       total,
       late,
-      averageDays,
+      onTime,
       onTimeRate,
-      totalSales,
+      lateRate,
+      averageShipping,
+      revenue,
+      riskData,
+      shippingPerformance,
+      revenueData,
     };
   }, [data]);
 
@@ -86,7 +213,7 @@ function AnalyticsPage() {
           justifyContent: "center",
           background: "#f8fafc",
           color: "#64748b",
-          fontSize: "16px",
+          fontSize: "18px",
         }}
       >
         Loading analytics...
@@ -98,12 +225,15 @@ function AnalyticsPage() {
     <div
       style={{
         minHeight: "100vh",
-        padding: "30px",
         background: "#f8fafc",
+        padding: "30px",
         boxSizing: "border-box",
       }}
     >
-      {/* HEADER */}
+
+      {/* =====================================================
+          HEADER
+      ====================================================== */}
 
       <div
         style={{
@@ -112,7 +242,7 @@ function AnalyticsPage() {
           alignItems: "center",
           gap: "20px",
           flexWrap: "wrap",
-          marginBottom: "30px",
+          marginBottom: "20px",
         }}
       >
         <div>
@@ -121,11 +251,10 @@ function AnalyticsPage() {
               display: "flex",
               alignItems: "center",
               gap: "10px",
-              marginBottom: "8px",
             }}
           >
             <BarChart3
-              size={30}
+              size={32}
               color="#2563eb"
             />
 
@@ -143,249 +272,454 @@ function AnalyticsPage() {
 
           <p
             style={{
-              margin: 0,
+              margin: "8px 0 0",
               color: "#64748b",
               fontSize: "15px",
             }}
           >
-            Supply chain performance and operational insights.
+            Supply chain performance and
+            operational insights.
           </p>
         </div>
 
-        <div
+        <button
+          onClick={loadData}
+          disabled={loading}
           style={{
-            background: "#eff6ff",
-            color: "#2563eb",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
             padding: "10px 16px",
-            borderRadius: "10px",
-            fontSize: "12px",
-            fontWeight: "700",
+            border: "none",
+            borderRadius: "9px",
+            background: "#2563eb",
+            color: "white",
+            fontWeight: "600",
+            cursor: "pointer",
           }}
         >
-          LIVE ANALYTICS
-        </div>
+          <RefreshCw size={17} />
+          Refresh Analysis
+        </button>
       </div>
 
-      {/* KPI GRID */}
+      {/* LIVE BADGE */}
+
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "7px",
+          background: "#dcfce7",
+          color: "#15803d",
+          padding: "7px 12px",
+          borderRadius: "20px",
+          fontSize: "12px",
+          fontWeight: "700",
+          marginBottom: "22px",
+        }}
+      >
+        ● LIVE ANALYTICS
+      </div>
+
+      {/* =====================================================
+          KPI CARDS
+      ====================================================== */}
 
       <div
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(220px, 1fr))",
+            "repeat(auto-fit, minmax(190px, 1fr))",
           gap: "18px",
-          marginBottom: "30px",
+          marginBottom: "25px",
         }}
       >
-        <AnalyticsCard
-          icon={<Package size={25} />}
+        <KpiCard
+          icon={<Package size={24} />}
           title="Total Shipments"
           value={analytics.total.toLocaleString()}
           color="#2563eb"
         />
 
-        <AnalyticsCard
-          icon={<AlertTriangle size={25} />}
+        <KpiCard
+          icon={<AlertTriangle size={24} />}
           title="Late Deliveries"
           value={analytics.late.toLocaleString()}
           color="#dc2626"
         />
 
-        <AnalyticsCard
-          icon={<Clock3 size={25} />}
+        <KpiCard
+          icon={<Clock3 size={24} />}
           title="Average Shipping"
-          value={`${analytics.averageDays} days`}
+          value={`${analytics.averageShipping.toFixed(
+            1
+          )} days`}
           color="#7c3aed"
         />
 
-        <AnalyticsCard
-          icon={<CheckCircle2 size={25} />}
+        <KpiCard
+          icon={<CheckCircle2 size={24} />}
           title="On-Time Rate"
-          value={`${analytics.onTimeRate}%`}
+          value={`${analytics.onTimeRate.toFixed(
+            1
+          )}%`}
           color="#16a34a"
+        />
+
+        <KpiCard
+          icon={<IndianRupee size={24} />}
+          title="Total Revenue"
+          value={`₹${Math.round(
+            analytics.revenue
+          ).toLocaleString()}`}
+          color="#ea580c"
         />
       </div>
 
-      {/* PERFORMANCE SECTION */}
+      {/* =====================================================
+          CHART ROW 1
+      ====================================================== */}
 
       <div
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit, minmax(300px, 1fr))",
+            "repeat(auto-fit, minmax(350px, 1fr))",
           gap: "20px",
-          marginBottom: "25px",
+          marginBottom: "20px",
         }}
       >
+
         {/* DELIVERY PERFORMANCE */}
 
-        <div className="analytics-panel">
-          <div className="analytics-panel-header">
-            <div>
-              <h2>Delivery Performance</h2>
-
-              <p>
-                Current on-time delivery performance.
-              </p>
-            </div>
-
-            <CheckCircle2
-              size={25}
-              color="#16a34a"
-            />
-          </div>
-
-          <div
-            style={{
-              marginTop: "25px",
-            }}
+        <ChartCard
+          title="Delivery Performance"
+          description="On-time versus late shipment distribution."
+        >
+          <ResponsiveContainer
+            width="100%"
+            height={280}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "10px",
-              }}
-            >
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: "13px",
-                }}
+            <PieChart>
+              <Pie
+                data={analytics.riskData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={65}
+                outerRadius={95}
+                paddingAngle={3}
               >
-                On-Time Deliveries
-              </span>
+                {analytics.riskData.map(
+                  (entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        index === 0
+                          ? "#dc2626"
+                          : "#16a34a"
+                      }
+                    />
+                  )
+                )}
+              </Pie>
 
-              <strong
-                style={{
-                  color: "#16a34a",
-                }}
-              >
-                {analytics.onTimeRate}%
-              </strong>
-            </div>
+              <Tooltip />
 
-            <div
-              style={{
-                height: "12px",
-                background: "#e2e8f0",
-                borderRadius: "20px",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  width: `${analytics.onTimeRate}%`,
-                  height: "100%",
-                  background:
-                    "linear-gradient(90deg,#16a34a,#22c55e)",
-                  borderRadius: "20px",
-                }}
-              />
-            </div>
-          </div>
-        </div>
+              <Legend />
 
-        {/* SHIPPING PERFORMANCE */}
-
-        <div className="analytics-panel">
-          <div className="analytics-panel-header">
-            <div>
-              <h2>Shipping Performance</h2>
-
-              <p>
-                Average time required to complete shipments.
-              </p>
-            </div>
-
-            <TrendingUp
-              size={25}
-              color="#7c3aed"
-            />
-          </div>
+            </PieChart>
+          </ResponsiveContainer>
 
           <div
             style={{
               display: "flex",
-              alignItems: "center",
               justifyContent: "center",
-              minHeight: "150px",
+              gap: "25px",
+              fontSize: "14px",
+              color: "#475569",
             }}
           >
-            <div
-              style={{
-                textAlign: "center",
+            <span>
+              On-Time:{" "}
+              <strong>
+                {analytics.onTimeRate.toFixed(
+                  1
+                )}
+                %
+              </strong>
+            </span>
+
+            <span>
+              Late:{" "}
+              <strong>
+                {analytics.lateRate.toFixed(
+                  1
+                )}
+                %
+              </strong>
+            </span>
+          </div>
+        </ChartCard>
+
+        {/* RISK ANALYSIS */}
+
+        <ChartCard
+          title="Delivery Risk Summary"
+          description="Current late-delivery risk across available shipments."
+        >
+          <ResponsiveContainer
+            width="100%"
+            height={280}
+          >
+            <BarChart
+              data={analytics.riskData}
+              margin={{
+                top: 20,
+                right: 20,
+                left: 0,
+                bottom: 10,
               }}
             >
-              <strong
-                style={{
-                  display: "block",
-                  fontSize: "42px",
-                  color: "#0f172a",
-                }}
-              >
-                {analytics.averageDays}
-              </strong>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+              />
 
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: "14px",
-                }}
+              <XAxis
+                dataKey="name"
+              />
+
+              <YAxis />
+
+              <Tooltip />
+
+              <Bar
+                dataKey="value"
+                name="Shipments"
+                radius={[6, 6, 0, 0]}
               >
-                Average shipping days
-              </span>
-            </div>
-          </div>
-        </div>
+                {analytics.riskData.map(
+                  (entry, index) => (
+                    <Cell
+                      key={`risk-${index}`}
+                      fill={
+                        index === 0
+                          ? "#dc2626"
+                          : "#16a34a"
+                      }
+                    />
+                  )
+                )}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
-      {/* REVENUE */}
+      {/* =====================================================
+          CHART ROW 2
+      ====================================================== */}
 
       <div
-        className="analytics-panel"
         style={{
-          marginBottom: "25px",
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(350px, 1fr))",
+          gap: "20px",
+          marginBottom: "20px",
         }}
       >
-        <div className="analytics-panel-header">
-          <div>
-            <h2>Revenue Overview</h2>
 
-            <p>
-              Total sales generated from the available shipment dataset.
-            </p>
-          </div>
+        {/* SHIPPING PERFORMANCE */}
 
-          <BarChart3
-            size={25}
-            color="#2563eb"
-          />
-        </div>
-
-        <div
-          style={{
-            marginTop: "25px",
-            fontSize: "36px",
-            fontWeight: "800",
-            color: "#2563eb",
-          }}
+        <ChartCard
+          title="Shipping Performance"
+          description="Average shipping time by shipping mode."
         >
-          ₹{Math.round(
-            analytics.totalSales
-          ).toLocaleString()}
-        </div>
+          {analytics.shippingPerformance.length >
+          0 ? (
+            <ResponsiveContainer
+              width="100%"
+              height={300}
+            >
+              <BarChart
+                data={
+                  analytics.shippingPerformance
+                }
+                margin={{
+                  top: 15,
+                  right: 20,
+                  left: 0,
+                  bottom: 45,
+                }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                />
+
+                <XAxis
+                  dataKey="mode"
+                  angle={-25}
+                  textAnchor="end"
+                  interval={0}
+                />
+
+                <YAxis />
+
+                <Tooltip />
+
+                <Bar
+                  dataKey="averageDays"
+                  name="Average Days"
+                  fill="#7c3aed"
+                  radius={[
+                    6,
+                    6,
+                    0,
+                    0,
+                  ]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChartMessage />
+          )}
+        </ChartCard>
+
+        {/* REVENUE */}
+
+        <ChartCard
+          title="Revenue Overview"
+          description="Revenue generated by shipping mode."
+        >
+          {analytics.revenueData.length >
+          0 ? (
+            <ResponsiveContainer
+              width="100%"
+              height={300}
+            >
+              <BarChart
+                data={
+                  analytics.revenueData
+                }
+                margin={{
+                  top: 15,
+                  right: 20,
+                  left: 10,
+                  bottom: 45,
+                }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                />
+
+                <XAxis
+                  dataKey="mode"
+                  angle={-25}
+                  textAnchor="end"
+                  interval={0}
+                />
+
+                <YAxis />
+
+                <Tooltip
+                  formatter={(value) =>
+                    `₹${Number(
+                      value
+                    ).toLocaleString()}`
+                  }
+                />
+
+                <Bar
+                  dataKey="revenue"
+                  name="Revenue"
+                  fill="#ea580c"
+                  radius={[
+                    6,
+                    6,
+                    0,
+                    0,
+                  ]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <EmptyChartMessage />
+          )}
+        </ChartCard>
       </div>
 
-      {/* INSIGHT */}
+      {/* =====================================================
+          AI DECISION INTELLIGENCE
+      ====================================================== */}
 
       <div
         style={{
-          padding: "22px",
-          borderRadius: "16px",
           background:
-            "linear-gradient(135deg,#eff6ff,#f5f3ff)",
-          border: "1px solid #dbeafe",
+            "linear-gradient(135deg, #eff6ff, #f5f3ff)",
+          border:
+            "1px solid #dbeafe",
+          borderRadius: "16px",
+          padding: "25px",
+          marginBottom: "20px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "10px",
+          }}
+        >
+          <BarChart3
+            size={24}
+            color="#2563eb"
+          />
+
+          <h2
+            style={{
+              margin: 0,
+              color: "#0f172a",
+            }}
+          >
+            AI Decision Intelligence
+          </h2>
+        </div>
+
+        <p
+          style={{
+            color: "#475569",
+            lineHeight: "1.6",
+            margin: 0,
+          }}
+        >
+          {analytics.lateRate.toFixed(1)}% of
+          shipments are currently identified
+          with late-delivery risk. Use the{" "}
+          <strong>
+            AI Prediction
+          </strong>{" "}
+          page to analyze individual
+          shipments and generate optimized
+          operational actions.
+        </p>
+      </div>
+
+      {/* OPERATIONAL INSIGHT */}
+
+      <div
+        style={{
+          background: "white",
+          borderRadius: "16px",
+          padding: "22px",
+          border:
+            "1px solid #e2e8f0",
         }}
       >
         <h3
@@ -394,7 +728,7 @@ function AnalyticsPage() {
             color: "#0f172a",
           }}
         >
-          💡 Analytics Insight
+          💡 Operational Insight
         </h3>
 
         <p
@@ -402,13 +736,11 @@ function AnalyticsPage() {
             margin: 0,
             color: "#475569",
             lineHeight: "1.6",
-            fontSize: "14px",
           }}
         >
-          The analytics section provides a quick view of shipment
-          volume, delivery performance, shipping time, and revenue.
-          These metrics can be used to identify operational issues
-          and improve supply chain decisions.
+          {analytics.late > 0
+            ? `${analytics.late.toLocaleString()} shipments require attention based on the current delivery-risk data. Managers can investigate these shipments through AI Prediction and use Recommendations for operational decision support.`
+            : "Current shipment performance is stable. Continue monitoring delivery risk, shipping time and revenue trends."}
         </p>
       </div>
     </div>
@@ -416,37 +748,140 @@ function AnalyticsPage() {
 }
 
 /* ============================================================
-   ANALYTICS CARD
+   KPI CARD
 ============================================================ */
 
-function AnalyticsCard({
+function KpiCard({
   icon,
   title,
   value,
   color,
 }) {
   return (
-    <div className="analytics-kpi-card">
+    <div
+      style={{
+        background: "white",
+        borderRadius: "16px",
+        padding: "20px",
+        display: "flex",
+        alignItems: "center",
+        gap: "15px",
+        boxShadow:
+          "0 2px 10px rgba(0,0,0,0.06)",
+        border:
+          "1px solid #e2e8f0",
+      }}
+    >
       <div
         style={{
-          width: "48px",
-          height: "48px",
+          width: "50px",
+          height: "50px",
           borderRadius: "12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `${color}15`,
           color,
+          background: `${color}15`,
+          flexShrink: 0,
         }}
       >
         {icon}
       </div>
 
       <div>
-        <span>{title}</span>
+        <span
+          style={{
+            display: "block",
+            color: "#64748b",
+            fontSize: "13px",
+            marginBottom: "5px",
+          }}
+        >
+          {title}
+        </span>
 
-        <strong>{value}</strong>
+        <strong
+          style={{
+            display: "block",
+            fontSize: "22px",
+            color: "#0f172a",
+          }}
+        >
+          {value}
+        </strong>
       </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   CHART CARD
+============================================================ */
+
+function ChartCard({
+  title,
+  description,
+  children,
+}) {
+  return (
+    <div
+      style={{
+        background: "white",
+        borderRadius: "16px",
+        padding: "22px",
+        boxShadow:
+          "0 2px 10px rgba(0,0,0,0.05)",
+        border:
+          "1px solid #e2e8f0",
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          fontSize: "19px",
+          color: "#0f172a",
+        }}
+      >
+        {title}
+      </h2>
+
+      <p
+        style={{
+          margin: "6px 0 0",
+          color: "#64748b",
+          fontSize: "13px",
+        }}
+      >
+        {description}
+      </p>
+
+      <div
+        style={{
+          marginTop: "15px",
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   EMPTY CHART
+============================================================ */
+
+function EmptyChartMessage() {
+  return (
+    <div
+      style={{
+        height: "300px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#94a3b8",
+      }}
+    >
+      No chart data available.
     </div>
   );
 }

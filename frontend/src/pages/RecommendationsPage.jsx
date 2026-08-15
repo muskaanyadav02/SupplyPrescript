@@ -6,6 +6,8 @@ import {
   CheckCircle2,
   TrendingUp,
   RefreshCw,
+  Package,
+  Clock,
 } from "lucide-react";
 
 import { loadSupplyChainData } from "../data/loadSupplyChainData";
@@ -13,17 +15,36 @@ import { loadSupplyChainData } from "../data/loadSupplyChainData";
 function RecommendationsPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [error, setError] = useState("");
+
+  // =========================================================
+  // LOAD SHIPMENT DATA
+  // =========================================================
 
   const loadData = async () => {
     try {
       setLoading(true);
+      setError("");
 
       const result = await loadSupplyChainData();
 
-      setData(Array.isArray(result) ? result : []);
+      const shipmentData = Array.isArray(result)
+        ? result
+        : [];
+
+      setData(shipmentData);
+      setLastUpdated(new Date());
     } catch (error) {
-      console.error("Recommendation data error:", error);
+      console.error(
+        "Recommendation data error:",
+        error
+      );
+
       setData([]);
+      setError(
+        "Unable to load shipment data. Please check the backend connection."
+      );
     } finally {
       setLoading(false);
     }
@@ -33,34 +54,67 @@ function RecommendationsPage() {
     loadData();
   }, []);
 
+  // =========================================================
+  // ANALYZE CURRENT SHIPMENT DATA
+  // =========================================================
+
   const analysis = useMemo(() => {
     const total = data.length;
 
-    const late = data.filter(
+    const lateShipments = data.filter(
       (item) =>
         String(item?.late_delivery_risk ?? "") === "1"
     );
 
-    const averageShippingDays =
+    const lateCount = lateShipments.length;
+
+    const riskPercentage =
       total > 0
-        ? data.reduce(
-            (sum, item) =>
-              sum +
-              Number(
-                item?.days_for_shipping_real ?? 0
-              ),
+        ? ((lateCount / total) * 100).toFixed(1)
+        : "0.0";
+
+    const shippingDays = data
+      .map((item) =>
+        Number(
+          item?.days_for_shipping_real ?? 0
+        )
+      )
+      .filter((days) => days > 0);
+
+    const averageShippingDays =
+      shippingDays.length > 0
+        ? shippingDays.reduce(
+            (sum, days) => sum + days,
             0
-          ) / total
+          ) / shippingDays.length
         : 0;
+
+    let riskLevel = "Low";
+    let riskColor = "#16a34a";
+
+    if (Number(riskPercentage) >= 50) {
+      riskLevel = "High";
+      riskColor = "#dc2626";
+    } else if (Number(riskPercentage) >= 25) {
+      riskLevel = "Medium";
+      riskColor = "#f59e0b";
+    }
+
+    // -------------------------------------------------------
+    // OPERATIONAL RECOMMENDATIONS
+    // -------------------------------------------------------
 
     const recommendations = [];
 
-    if (late.length > 0) {
+    if (lateCount > 0) {
       recommendations.push({
         icon: AlertTriangle,
         title: "Review Late Deliveries",
-        description: `${late.length} shipments are currently identified with late-delivery risk. Prioritize these shipments for operational review.`,
-        type: "High Priority",
+        description: `${lateCount} shipments are currently identified with late-delivery risk. Prioritize these shipments for operational review.`,
+        type:
+          Number(riskPercentage) >= 50
+            ? "High Priority"
+            : "Priority",
         color: "#dc2626",
         background: "#fef2f2",
       });
@@ -72,51 +126,93 @@ function RecommendationsPage() {
         title: "Optimize Shipping Performance",
         description: `Average shipping time is ${averageShippingDays.toFixed(
           1
-        )} days. Review shipping modes and supplier performance to reduce delays.`,
+        )} days. Review shipping modes, routes and supplier performance to reduce delays.`,
         type: "Optimization",
         color: "#f59e0b",
         background: "#fffbeb",
       });
-    }
-
-    if (total > 0 && late.length === 0) {
+    } else if (averageShippingDays > 0) {
       recommendations.push({
         icon: CheckCircle2,
-        title: "Maintain Current Performance",
-        description:
-          "No late-delivery risk was detected in the current dataset. Continue monitoring shipment performance.",
+        title: "Maintain Shipping Performance",
+        description: `Average shipping time is ${averageShippingDays.toFixed(
+          1
+        )} days. Continue monitoring shipping performance and supplier activity.`,
         type: "Positive",
         color: "#16a34a",
         background: "#f0fdf4",
       });
     }
 
-    recommendations.push({
-      icon: TrendingUp,
-      title: "Monitor Shipment Trends",
-      description:
-        "Continue monitoring shipping time, delivery risk and supplier performance through the analytics dashboard.",
-      type: "Monitoring",
-      color: "#2563eb",
-      background: "#eff6ff",
-    });
+    if (total > 0) {
+      recommendations.push({
+        icon: TrendingUp,
+        title: "Monitor Shipment Trends",
+        description:
+          "Continue monitoring delivery risk, shipping time and supplier performance through the analytics dashboard.",
+        type: "Monitoring",
+        color: "#2563eb",
+        background: "#eff6ff",
+      });
+    }
+
+    if (total === 0) {
+      recommendations.push({
+        icon: Package,
+        title: "Awaiting Shipment Data",
+        description:
+          "No shipment records are currently available. Refresh the analysis after shipment data becomes available.",
+        type: "Information",
+        color: "#6b7280",
+        background: "#f9fafb",
+      });
+    }
 
     return {
       total,
-      late: late.length,
+      lateCount,
+      riskPercentage,
       averageShippingDays,
+      riskLevel,
+      riskColor,
       recommendations,
     };
   }, [data]);
 
+  // =========================================================
+  // LOADING STATE
+  // =========================================================
+
+  if (loading && data.length === 0) {
+    return (
+      <div className="page-loading">
+        <RefreshCw
+          size={30}
+          className="spin-icon"
+        />
+
+        <p>
+          Analyzing current shipment data...
+        </p>
+      </div>
+    );
+  }
+
+  // =========================================================
+  // MAIN PAGE
+  // =========================================================
+
   return (
     <div className="recommendations-page">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div className="recommendations-header">
 
         <div>
+
           <div className="recommendations-title">
 
             <Lightbulb
@@ -131,9 +227,10 @@ function RecommendationsPage() {
           </div>
 
           <p>
-            AI-powered supply chain recommendations
+            Operational insights and recommendations
             based on current shipment data.
           </p>
+
         </div>
 
         <button
@@ -141,6 +238,7 @@ function RecommendationsPage() {
           onClick={loadData}
           disabled={loading}
         >
+
           <RefreshCw
             size={17}
             className={
@@ -149,61 +247,216 @@ function RecommendationsPage() {
           />
 
           {loading
-            ? "Loading..."
+            ? "Analyzing..."
             : "Refresh Analysis"}
+
         </button>
 
       </div>
 
-      {/* SUMMARY */}
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
+
+      {error && (
+        <div
+          style={{
+            padding: "14px 18px",
+            marginBottom: "20px",
+            borderRadius: "10px",
+            background: "#fef2f2",
+            color: "#dc2626",
+            border: "1px solid #fecaca",
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* =====================================================
+          SUMMARY CARDS
+      ===================================================== */}
 
       <div className="recommendation-summary">
 
         <div className="recommendation-summary-card">
-          <span>Total Shipments</span>
-          <strong>{analysis.total}</strong>
+
+          <span>
+            Total Shipments
+          </span>
+
+          <strong>
+            {analysis.total}
+          </strong>
+
         </div>
 
         <div className="recommendation-summary-card danger">
-          <span>Late Risk</span>
-          <strong>{analysis.late}</strong>
+
+          <span>
+            Late Risk
+          </span>
+
+          <strong>
+            {analysis.lateCount}
+          </strong>
+
         </div>
 
         <div className="recommendation-summary-card warning">
-          <span>Avg Shipping</span>
+
+          <span>
+            Avg Shipping
+          </span>
+
           <strong>
-            {analysis.averageShippingDays.toFixed(1)} days
+            {analysis.averageShippingDays > 0
+              ? `${analysis.averageShippingDays.toFixed(
+                  1
+                )} days`
+              : "—"}
           </strong>
+
         </div>
 
         <div className="recommendation-summary-card success">
-          <span>Recommendations</span>
+
+          <span>
+            Recommendations
+          </span>
+
           <strong>
             {analysis.recommendations.length}
           </strong>
+
         </div>
 
       </div>
 
-      {/* CONTENT */}
+      {/* =====================================================
+          CURRENT RISK OVERVIEW
+      ===================================================== */}
+
+      <div
+        className="recommendations-panel"
+        style={{
+          marginBottom: "20px",
+        }}
+      >
+
+        <div className="recommendations-panel-header">
+
+          <div>
+
+            <h2>
+              Current Delivery Risk
+            </h2>
+
+            <p>
+              Overall late-delivery risk calculated
+              from the current shipment dataset.
+            </p>
+
+          </div>
+
+          <div
+            style={{
+              padding: "7px 14px",
+              borderRadius: "20px",
+              background: `${analysis.riskColor}15`,
+              color: analysis.riskColor,
+              fontWeight: "700",
+              fontSize: "14px",
+            }}
+          >
+            {analysis.riskLevel} Risk
+          </div>
+
+        </div>
+
+        <div
+          style={{
+            marginTop: "20px",
+          }}
+        >
+
+          <div
+            style={{
+              height: "12px",
+              width: "100%",
+              background: "#e5e7eb",
+              borderRadius: "10px",
+              overflow: "hidden",
+            }}
+          >
+
+            <div
+              style={{
+                height: "100%",
+                width: `${analysis.riskPercentage}%`,
+                background: analysis.riskColor,
+                borderRadius: "10px",
+                transition: "width 0.4s ease",
+              }}
+            />
+
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginTop: "8px",
+              fontSize: "13px",
+              color: "#6b7280",
+            }}
+          >
+
+            <span>
+              Low Risk
+            </span>
+
+            <strong
+              style={{
+                color: analysis.riskColor,
+              }}
+            >
+              {analysis.riskPercentage}% at risk
+            </strong>
+
+            <span>
+              High Risk
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =====================================================
+          RECOMMENDATIONS
+      ===================================================== */}
 
       <div className="recommendations-panel">
 
         <div className="recommendations-panel-header">
 
           <div>
+
             <h2>
               Recommended Actions
             </h2>
 
             <p>
-              Actions generated from the current
-              supply chain dataset.
+              Operational actions generated from the
+              current shipment data.
             </p>
+
           </div>
 
           <div className="ai-insight-badge">
-            ✨ AI Insights
+            ✨ Operational Insights
           </div>
 
         </div>
@@ -211,28 +464,14 @@ function RecommendationsPage() {
         {loading ? (
 
           <div className="recommendation-empty">
+
             <RefreshCw
               size={32}
               className="spin-icon"
             />
 
             <p>
-              Analyzing shipment data...
-            </p>
-          </div>
-
-        ) : analysis.recommendations.length === 0 ? (
-
-          <div className="recommendation-empty">
-
-            <Lightbulb size={38} />
-
-            <h3>
-              No recommendations available
-            </h3>
-
-            <p>
-              More shipment data is required.
+              Refreshing shipment analysis...
             </p>
 
           </div>
@@ -250,7 +489,7 @@ function RecommendationsPage() {
                 return (
                   <div
                     className="recommendation-item"
-                    key={index}
+                    key={`${recommendation.title}-${index}`}
                     style={{
                       background:
                         recommendation.background,
@@ -258,6 +497,8 @@ function RecommendationsPage() {
                         `5px solid ${recommendation.color}`,
                     }}
                   >
+
+                    {/* ICON */}
 
                     <div
                       className="recommendation-item-icon"
@@ -268,6 +509,8 @@ function RecommendationsPage() {
                     >
                       <Icon size={25} />
                     </div>
+
+                    {/* CONTENT */}
 
                     <div className="recommendation-item-content">
 
@@ -302,6 +545,90 @@ function RecommendationsPage() {
           </div>
 
         )}
+
+      </div>
+
+      {/* =====================================================
+          DATA STATUS
+      ===================================================== */}
+
+      <div
+        style={{
+          marginTop: "18px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          fontSize: "13px",
+          color: "#6b7280",
+        }}
+      >
+
+        <Clock size={15} />
+
+        {lastUpdated ? (
+          <span>
+            Analysis updated at{" "}
+            {lastUpdated.toLocaleTimeString()}
+          </span>
+        ) : (
+          <span>
+            Waiting for data refresh
+          </span>
+        )}
+
+      </div>
+
+      {/* =====================================================
+          EXPLANATION FOR USER
+      ===================================================== */}
+
+      <div
+        style={{
+          marginTop: "20px",
+          padding: "16px 18px",
+          borderRadius: "10px",
+          background: "#f8fafc",
+          border: "1px solid #e5e7eb",
+        }}
+      >
+
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            alignItems: "flex-start",
+          }}
+        >
+
+          <Lightbulb
+            size={20}
+            color="#f59e0b"
+          />
+
+          <div>
+
+            <strong>
+              Decision Support
+            </strong>
+
+            <p
+              style={{
+                margin:
+                  "5px 0 0 0",
+                color: "#6b7280",
+                lineHeight: "1.5",
+              }}
+            >
+              These insights help managers identify
+              areas that need attention. For
+              shipment-level AI prediction and
+              optimized action selection, use the
+              AI Prediction page.
+            </p>
+
+          </div>
+
+        </div>
 
       </div>
 
